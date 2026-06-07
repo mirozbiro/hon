@@ -125,7 +125,7 @@ class HonConnection:
                     _LOGGER.debug("Framework update from ["+ self._framework+ "] to ["+ text[start:end]+ "]")
                     self._framework = text[start:end]
                     return await self.async_get_frontdoor_url(2)
-                _LOGGER.error("Unable to retreive the frontdoor URL. Message: " + text)
+                _LOGGER.error("Unable to retreive the frontdoor URL. Message: " + text[:200])
                 return 1
 
         if error_code == 2 and self._entry != None:
@@ -165,14 +165,14 @@ class HonConnection:
                     if m:
                         self._id_token = m.group(1)
                     else:
-                        _LOGGER.error("Unable to get [id_token] during authorization process (tried both options). Full response [" + text + "]")
+                        _LOGGER.error("Unable to get [id_token] during authorization process (tried both options). Response length: " + str(len(text)))
                         return False
                 else:
                     params = urllib.parse.parse_qs(array[1])
                     self._id_token = params["id_token"][0]
             except:
                 if "ChangePassword" not in text:
-                    _LOGGER.error("Unable to get [id_token] during authorization process. Full response [" + text + "]")
+                    _LOGGER.error("Unable to get [id_token] during authorization process. Response length: " + str(len(text)))
                 else:
                     _LOGGER.error("Unable to get connect. You need to change your password on the hOn app or go to https://account2.hon-smarthome.com/")
                 return False
@@ -190,7 +190,7 @@ class HonConnection:
                 self._cognitoToken = json_data["cognitoUser"]["Token"]
             except:
                 text = await resp.text()
-                _LOGGER.error("hOn Invalid Data ["+ str(resp.text()) + "] after sending command ["+ str(data)+ "] with headers [" + str(post_headers) + "]. Response: " + text)
+                _LOGGER.error("hOn Invalid Data after sending login command [" + str(data) + "]. Response length: " + str(len(text)))
                 return False
 
 
@@ -199,7 +199,7 @@ class HonConnection:
             try:
                 json_data = await resp.json()
             except:
-                _LOGGER.error("hOn Invalid Data ["+ str(resp.text()) + "] after GET [" + url + "]")
+                _LOGGER.error("hOn Invalid Data after GET [" + url + "]. Status: " + str(resp.status))
                 return False
 
             self._appliances = json_data["payload"]["appliances"]
@@ -305,7 +305,7 @@ class HonConnection:
                 data = await resp.json()
                 _LOGGER.debug((f"Command result (async_set): {data}"))
             except json.JSONDecodeError:
-                _LOGGER.error("hOn Invalid Data ["+ str(resp.text()) + "] after sending command ["+ str(command)+ "]")
+                _LOGGER.error("hOn Invalid Data (JSON decode error) after sending command. Status: " + str(resp.status))
                 return False
             if data["payload"]["resultCode"] == "0":
                 return True
@@ -345,7 +345,7 @@ class HonConnection:
                 data = await resp.json()
                 _LOGGER.debug((f"Command result (send_command): {data}"))
             except json.JSONDecodeError:
-                _LOGGER.error("hOn Invalid Data ["+ str(resp.text()) + "] after sending command ["+ str(command)+ "]")
+                _LOGGER.error("hOn Invalid Data (JSON decode error) after sending command. Status: " + str(resp.status))
                 return False
             if data["payload"]["resultCode"] == "0":
                 return True
